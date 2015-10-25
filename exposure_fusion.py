@@ -3,10 +3,18 @@ from __builtin__ import isinstance
 import numpy as np
 
 
-def compute_weights(images):
+def compute_weights(images, time_decay):
     (w_c, w_s, w_e) = (1, 1, 1)
+
+    if time_decay is not None:
+        tau = len(images)
+        sigma2 = (tau**2)/(np.float32(time_decay)**2)
+        t = np.array(range(tau-1, -1, -1))
+        decay = np.exp(-((t)**2)/(2*sigma2))
+
     weights = []
     weights_sum = np.zeros(images[0].shape[:2], dtype=np.float32)
+    i = 0
     for image_uint in images:
         image = np.float32(image_uint)/255
         W = np.ones(image.shape[:2], dtype=np.float32)
@@ -26,7 +34,12 @@ def compute_weights(images):
         W_exposedness = np.prod(np.exp(-((image - 0.5)**2)/(2*sigma2)), axis=2, dtype=np.float32) ** w_e + 1
         W = np.multiply(W, W_exposedness)
 
+        if time_decay is not None:
+            W *= decay[i]
+            i += 1
+
         weights_sum += W
+
         weights.append(W)
 
     # normalization
@@ -83,7 +96,7 @@ def pyramid_collapse(pyramid):
     return collapsed
 
 
-def exposure_fusion(images, depth=3):
+def exposure_fusion(images, depth=3, time_decay=None):
 
     if not isinstance(images, list) or len(images) < 2:
         print("Input has to be a list of at least two images")
@@ -96,7 +109,7 @@ def exposure_fusion(images, depth=3):
             return None
 
     # compute weights
-    weights = compute_weights(images)
+    weights = compute_weights(images, time_decay)
 
     # compute pyramids
     lps = []

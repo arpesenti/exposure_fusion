@@ -184,7 +184,7 @@ def align_images(images):
     # Run the ECC algorithm. The results are stored in warp_matrix.
     aligned_images = [images[0]]
     for i in range(1, len(images)):
-        (cc, warp_matrix) = cv2.findTransformECC(model_image, gray_images[i], warp_matrix, warp_mode, criteria)
+        (cc, warp_matrix) = cv2.findTransformECC(model_image, gray_images[i], warp_matrix, warp_mode, criteria, inputMask=None, gaussFiltSize=3)
 
         if warp_mode == cv2.MOTION_HOMOGRAPHY :
             # Use warpPerspective for Homography

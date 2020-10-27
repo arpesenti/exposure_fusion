@@ -20,7 +20,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name='exposure_fusion',
 
-    version='0.1',
+    version='0.2',
 
     description='Exposure fusion of multiple images',
     long_description=long_description,
@@ -47,16 +47,7 @@ setup(
         'Intended Audience :: Developers',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
-
-        # Specify the Python versions you support here. In particular, ensure
-        # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2',
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
+        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'
     ],
 
     # What does your project relate to?
@@ -74,6 +65,6 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy'],
+    install_requires=['numpy', 'opencv-python>=3'],
 
 )

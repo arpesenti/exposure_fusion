@@ -82,12 +82,14 @@ class TestLaplacianPyramid:
             reconstructed = pyramid_collapse(lp)
             assert reconstructed.shape == img.shape
             assert reconstructed.dtype == np.uint8
+            assert np.allclose(reconstructed.astype(np.float32),
+                               img.astype(np.float32), atol=2)
 
 
 class TestPyramidCollapse:
     def test_output_shape(self):
-        lp = [np.random.randint(0, 256, (8, 8, 3), dtype=np.uint8),
-              np.random.randint(0, 256, (4, 4, 3), dtype=np.uint8)]
+        lp = [np.random.randint(0, 256, (8, 8, 3), dtype=np.uint8).astype(np.float32),
+              np.random.randint(0, 256, (4, 4, 3), dtype=np.uint8).astype(np.float32)]
         out = pyramid_collapse(lp)
         assert out.shape == (8, 8, 3)
         assert out.dtype == np.uint8

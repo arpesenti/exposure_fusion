@@ -101,7 +101,8 @@ class TestComputeWeights:
         weights = compute_weights(images, time_decay=None)
         assert len(weights) == 2
         assert weights[0].shape == (8, 8)
-        assert weights[0].dtype == np.uint8
+        assert weights[0].dtype == np.float32
+        assert np.all((weights[0] >= 0) & (weights[0] <= 1))
 
     def test_with_time_decay(self):
         images = [_rgb_image(8, 8), _rgb_image(8, 8), _rgb_image(8, 8)]
@@ -109,12 +110,13 @@ class TestComputeWeights:
         assert len(weights) == 3
         for w in weights:
             assert w.shape == (8, 8)
+            assert w.dtype == np.float32
 
     def test_normalized_sum(self):
         images = [_rgb_image(8, 8), _rgb_image(8, 8)]
         weights = compute_weights(images, time_decay=None)
-        total = weights[0].astype(np.float32) + weights[1].astype(np.float32)
-        assert np.allclose(total[total > 0], 255, atol=2)
+        total = weights[0] + weights[1]
+        assert np.allclose(total[total > 0], 1.0, atol=1e-5)
 
 
 class TestExposureFusion:

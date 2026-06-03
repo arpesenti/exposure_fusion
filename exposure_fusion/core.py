@@ -7,35 +7,33 @@ def compute_weights(images, time_decay):
 
     if time_decay is not None:
         tau = len(images)
-        sigma2 = (tau**2)/(np.float32(time_decay)**2)
+        time_sigma2 = (tau**2)/(np.float32(time_decay)**2)
         t = np.array(range(tau-1, -1, -1))
-        decay = np.exp(-((t)**2)/(2*sigma2))
+        decay = np.exp(-((t)**2)/(2*time_sigma2))
 
     weights = []
     weights_sum = np.zeros(images[0].shape[:2], dtype=np.float32)
-    i = 0
     for image_uint in images:
         image = np.float32(image_uint)/255
         W = np.ones(image.shape[:2], dtype=np.float32)
 
         # contrast
-        image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         laplacian = cv2.Laplacian(image_gray, cv2.CV_32F)
         W_contrast = np.absolute(laplacian) ** w_c + 1
-        W = np.multiply(W, W_contrast)
+        W *= W_contrast
 
         # saturation
         W_saturation = image.std(axis=2, dtype=np.float32) ** w_s + 1
-        W = np.multiply(W, W_saturation)
+        W *= W_saturation
 
-        # well-exposedness
-        sigma2 = 0.4
-        W_exposedness = np.prod(np.exp(-((image - 0.5)**2)/(2*sigma2)), axis=2, dtype=np.float32) ** w_e + 1
-        W = np.multiply(W, W_exposedness)
+        # well-exposedness (paper: sigma=0.2)
+        ws = 0.04  # sigma^2 = 0.2^2
+        W_exposedness = np.prod(np.exp(-((image - 0.5)**2)/(2*ws)), axis=2, dtype=np.float32) ** w_e + 1
+        W *= W_exposedness
 
         if time_decay is not None:
-            W *= decay[i]
-            i += 1
+            W *= decay[len(weights)]
 
         weights_sum += W
 
@@ -45,7 +43,6 @@ def compute_weights(images, time_decay):
     nonzero = weights_sum > 0
     for i in range(len(weights)):
         weights[i][nonzero] /= weights_sum[nonzero]
-        weights[i] = np.uint8(weights[i]*255)
 
     return weights
 
@@ -120,13 +117,11 @@ def exposure_fusion(images, depth=3, time_decay=None):
     # combine pyramids with weights
     LS = []
     for l in range(depth):
-        ls = np.zeros(lps[0][l].shape, dtype=np.uint8)
+        ls = np.zeros(lps[0][l].shape, dtype=np.float32)
         for k in range(len(images)):
             lp = lps[k][l]
-            gps_float = np.float32(gps[k][l])/255
-            gp = np.dstack((gps_float, gps_float, gps_float))
-            lp_gp = cv2.multiply(lp, gp, dtype=cv2.CV_8UC3)
-            ls = cv2.add(ls, lp_gp)
+            gp_3ch = np.dstack((gps[k][l], gps[k][l], gps[k][l]))
+            ls += lp * gp_3ch
         LS.append(ls)
 
     # collapse pyramid

@@ -29,7 +29,7 @@ def align_images(images: List[NDArray[np.uint8]]) -> List[NDArray[np.uint8]]:
     sz = model_image.shape
 
     warp_matrix = np.eye(2, 3, dtype=np.float32)
-    criteria = (TERM_CRITERIA_EPS | TERM_CRITERIA_COUNT, 5000, 1e-10)
+    criteria = (TERM_CRITERIA_EPS | TERM_CRITERIA_COUNT, 200, 1e-6)
 
     aligned_images: List[NDArray[np.uint8]] = [images[0]]
     for i in range(1, len(images)):
@@ -41,6 +41,7 @@ def align_images(images: List[NDArray[np.uint8]]) -> List[NDArray[np.uint8]]:
             criteria,
             inputMask=None,
             gaussFiltSize=3,
+            num_levels=4,
         )
         aligned_image = warp_affine(
             images[i],

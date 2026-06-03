@@ -262,6 +262,84 @@ def find_transform_ecc(
     criteria: Tuple[int, int, float],
     inputMask: None = None,
     gaussFiltSize: int = 3,
+    num_levels: int = 1,
+) -> Tuple[float, NDArray]:
+    if num_levels > 1:
+        return _find_transform_ecc_multiscale(
+            template_image, input_image, warp_matrix,
+            motion_type, criteria, inputMask, gaussFiltSize, num_levels
+        )
+
+    return _find_transform_ecc_single(
+        template_image, input_image, warp_matrix,
+        motion_type, criteria, inputMask, gaussFiltSize,
+    )
+
+
+def _find_transform_ecc_multiscale(
+    template_image: NDArray,
+    input_image: NDArray,
+    warp_matrix: NDArray,
+    motion_type: int,
+    criteria: Tuple[int, int, float],
+    inputMask: None,
+    gaussFiltSize: int,
+    num_levels: int,
+) -> Tuple[float, NDArray]:
+    max_iters, eps = criteria[1], criteria[2]
+
+    min_dim = min(template_image.shape[:2])
+    max_levels = max(1, int(np.floor(np.log2(min_dim))) - 1)
+    num_levels = min(num_levels, max_levels)
+
+    template_pyr = [template_image]
+    input_pyr = [input_image]
+    for _ in range(num_levels - 1):
+        template_pyr.append(resize(template_pyr[-1], fx=0.5, fy=0.5))
+        input_pyr.append(resize(input_pyr[-1], fx=0.5, fy=0.5))
+
+    p = np.array([warp_matrix[0, 2], warp_matrix[1, 2]], dtype=np.float64)
+
+    for level in range(num_levels - 1, -1, -1):
+        scale = float(1 << level)
+        p_scaled = p / scale
+
+        M_init = np.array(
+            [[1.0, 0.0, p_scaled[0]], [0.0, 1.0, p_scaled[1]]],
+            dtype=np.float32,
+        )
+
+        if level == 0:
+            level_eps = max(eps, 1e-6)
+            level_iters = max_iters
+        else:
+            level_eps = 1e-4
+            level_iters = min(max_iters, 50)
+
+        level_criteria = (criteria[0], level_iters, level_eps)
+
+        _, M_result = _find_transform_ecc_single(
+            template_pyr[level], input_pyr[level], M_init,
+            motion_type, level_criteria, inputMask, gaussFiltSize,
+        )
+
+        p[0] = M_result[0, 2] * scale
+        p[1] = M_result[1, 2] * scale
+
+    warp_matrix_out = np.array(
+        [[1.0, 0.0, p[0]], [0.0, 1.0, p[1]]], dtype=np.float32
+    )
+    return float(0.0), warp_matrix_out
+
+
+def _find_transform_ecc_single(
+    template_image: NDArray,
+    input_image: NDArray,
+    warp_matrix: NDArray,
+    motion_type: int,
+    criteria: Tuple[int, int, float],
+    inputMask: None,
+    gaussFiltSize: int,
 ) -> Tuple[float, NDArray]:
     max_iters, eps = criteria[1], criteria[2]
     h, w = template_image.shape[:2]

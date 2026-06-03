@@ -12,16 +12,27 @@ authors = [
   { name = "Armando Pesenti Gritti", email = "arpesenti@gmail.com" }
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
   "numpy",
-  "opencv-python>=3",
+  "Pillow",
 ]
 readme = "README.md"
+
+[project.optional-dependencies]
+test = [
+  "opencv-python>=3",
+  "pytest",
+]
+
+[project.scripts]
+exposure-fusion = "exposure_fusion.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/arpesenti/exposure_fusion"

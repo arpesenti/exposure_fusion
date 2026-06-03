@@ -1,8 +1,15 @@
 from typing import List, Optional
 
-import cv2
 import numpy as np
 from numpy.typing import NDArray
+
+from exposure_fusion._numpy_ops import (
+    bgr_to_gray,
+    get_gaussian_kernel,
+    laplacian,
+    resize,
+    sep_filter2d,
+)
 
 
 def compute_weights(
@@ -23,9 +30,9 @@ def compute_weights(
         image = np.float32(image_uint) / 255
         W = np.ones(image.shape[:2], dtype=np.float32)
 
-        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        laplacian = cv2.Laplacian(image_gray, cv2.CV_32F)
-        W_contrast = np.absolute(laplacian) ** w_c + 1
+        image_gray = bgr_to_gray(image)
+        w_laplacian = laplacian(image_gray)
+        W_contrast = np.absolute(w_laplacian) ** w_c + 1
         W *= W_contrast
 
         W_saturation = image.std(axis=2, dtype=np.float32) ** w_s + 1
@@ -57,19 +64,19 @@ def compute_weights(
 
 
 def gaussian_kernel(size: int = 5, sigma: float = 0.4) -> NDArray[np.float32]:
-    return cv2.getGaussianKernel(ksize=size, sigma=sigma)
+    return get_gaussian_kernel(size=size, sigma=sigma)
 
 
 def image_reduce(image: NDArray) -> NDArray:
     kernel = gaussian_kernel()
-    out = cv2.sepFilter2D(image, -1, kernel, kernel.T)
-    return cv2.resize(out, None, fx=0.5, fy=0.5)
+    out = sep_filter2d(image, kernel, kernel.T)
+    return resize(out, fx=0.5, fy=0.5)
 
 
 def image_expand(image: NDArray) -> NDArray:
     kernel = gaussian_kernel()
-    out = cv2.resize(image, None, fx=2, fy=2)
-    return cv2.sepFilter2D(out, -1, kernel, kernel.T)
+    out = resize(image, fx=2, fy=2)
+    return sep_filter2d(out, kernel, kernel.T)
 
 
 def gaussian_pyramid(img: NDArray, depth: int) -> List[NDArray]:

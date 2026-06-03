@@ -1,8 +1,17 @@
 from typing import List
 
-import cv2
 import numpy as np
 from numpy.typing import NDArray
+
+from exposure_fusion._numpy_ops import (
+    MOTION_TRANSLATION,
+    TERM_CRITERIA_COUNT,
+    TERM_CRITERIA_EPS,
+    WARP_INVERSE_MAP,
+    bgr_to_gray,
+    find_transform_ecc,
+    warp_affine,
+)
 
 
 def align_images(images: List[NDArray[np.uint8]]) -> List[NDArray[np.uint8]]:
@@ -15,29 +24,29 @@ def align_images(images: List[NDArray[np.uint8]]) -> List[NDArray[np.uint8]]:
         if img.shape != size:
             raise ValueError("Input images have to be of the same size")
 
-    gray_images = [cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) for img in images]
+    gray_images = [bgr_to_gray(img) for img in images]
     model_image = gray_images[0]
     sz = model_image.shape
 
     warp_matrix = np.eye(2, 3, dtype=np.float32)
-    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 5000, 1e-10)
+    criteria = (TERM_CRITERIA_EPS | TERM_CRITERIA_COUNT, 5000, 1e-10)
 
     aligned_images: List[NDArray[np.uint8]] = [images[0]]
     for i in range(1, len(images)):
-        cc, warp_matrix = cv2.findTransformECC(
+        cc, warp_matrix = find_transform_ecc(
             model_image,
             gray_images[i],
             warp_matrix,
-            cv2.MOTION_TRANSLATION,
+            MOTION_TRANSLATION,
             criteria,
             inputMask=None,
             gaussFiltSize=3,
         )
-        aligned_image = cv2.warpAffine(
+        aligned_image = warp_affine(
             images[i],
             warp_matrix,
             (sz[1], sz[0]),
-            flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP,
+            flags=WARP_INVERSE_MAP,
         )
         aligned_images.append(aligned_image)
 

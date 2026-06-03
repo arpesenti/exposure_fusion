@@ -1,98 +1,111 @@
+from typing import List, Optional
+
 import cv2
 import numpy as np
+from numpy.typing import NDArray
 
 
-def compute_weights(images, time_decay):
-    (w_c, w_s, w_e) = (1, 1, 1)
+def compute_weights(
+    images: List[NDArray[np.uint8]],
+    time_decay: Optional[float],
+) -> List[NDArray[np.float32]]:
+    w_c, w_s, w_e = 1, 1, 1
 
     if time_decay is not None:
         tau = len(images)
-        time_sigma2 = (tau**2)/(np.float32(time_decay)**2)
-        t = np.array(range(tau-1, -1, -1))
-        decay = np.exp(-((t)**2)/(2*time_sigma2))
+        time_sigma2 = (tau**2) / (np.float32(time_decay) ** 2)
+        t = np.arange(tau - 1, -1, -1)
+        decay = np.exp(-((t) ** 2) / (2 * time_sigma2))
 
-    weights = []
+    weights: List[NDArray[np.float32]] = []
     weights_sum = np.zeros(images[0].shape[:2], dtype=np.float32)
     for image_uint in images:
-        image = np.float32(image_uint)/255
+        image = np.float32(image_uint) / 255
         W = np.ones(image.shape[:2], dtype=np.float32)
 
-        # contrast
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         laplacian = cv2.Laplacian(image_gray, cv2.CV_32F)
         W_contrast = np.absolute(laplacian) ** w_c + 1
         W *= W_contrast
 
-        # saturation
         W_saturation = image.std(axis=2, dtype=np.float32) ** w_s + 1
         W *= W_saturation
 
-        # well-exposedness (paper: sigma=0.2)
-        ws = 0.04  # sigma^2 = 0.2^2
-        W_exposedness = np.prod(np.exp(-((image - 0.5)**2)/(2*ws)), axis=2, dtype=np.float32) ** w_e + 1
+        ws = 0.04
+        W_exposedness = (
+            np.prod(
+                np.exp(-((image - 0.5) ** 2) / (2 * ws)),
+                axis=2,
+                dtype=np.float32,
+            )
+            ** w_e
+            + 1
+        )
         W *= W_exposedness
 
         if time_decay is not None:
             W *= decay[len(weights)]
 
         weights_sum += W
-
         weights.append(W)
 
-    # normalization
     nonzero = weights_sum > 0
-    for i in range(len(weights)):
-        weights[i][nonzero] /= weights_sum[nonzero]
+    for w in weights:
+        w[nonzero] /= weights_sum[nonzero]
 
     return weights
 
 
-def gaussian_kernel(size=5, sigma=0.4):
+def gaussian_kernel(size: int = 5, sigma: float = 0.4) -> NDArray[np.float32]:
     return cv2.getGaussianKernel(ksize=size, sigma=sigma)
 
 
-def image_reduce(image):
+def image_reduce(image: NDArray) -> NDArray:
     kernel = gaussian_kernel()
-    out_image = cv2.sepFilter2D(image, -1, kernel, kernel.T)
-    out_image = cv2.resize(out_image, None, fx=0.5, fy=0.5)
-    return out_image
+    out = cv2.sepFilter2D(image, -1, kernel, kernel.T)
+    return cv2.resize(out, None, fx=0.5, fy=0.5)
 
 
-def image_expand(image):
+def image_expand(image: NDArray) -> NDArray:
     kernel = gaussian_kernel()
-    out_image = cv2.resize(image, None, fx=2, fy=2)
-    out_image = cv2.sepFilter2D(out_image, -1, kernel, kernel.T)
-    return out_image
+    out = cv2.resize(image, None, fx=2, fy=2)
+    return cv2.sepFilter2D(out, -1, kernel, kernel.T)
 
 
-def gaussian_pyramid(img, depth):
+def gaussian_pyramid(img: NDArray, depth: int) -> List[NDArray]:
     G = img.copy()
     gp = [G]
-    for i in range(depth):
+    for _ in range(depth):
         G = image_reduce(G)
         gp.append(G)
     return gp
 
 
-def laplacian_pyramid(img, depth):
-    gp = gaussian_pyramid(img, depth+1)
-    lp = [gp[depth-1].astype(np.float32)]
-    for i in range(depth-1, 0, -1):
+def laplacian_pyramid(img: NDArray, depth: int) -> List[NDArray[np.float32]]:
+    gp = gaussian_pyramid(img, depth + 1)
+    lp: List[NDArray[np.float32]] = [gp[depth - 1].astype(np.float32)]
+    for i in range(depth - 1, 0, -1):
         GE = image_expand(gp[i]).astype(np.float32)
-        L = gp[i-1].astype(np.float32) - GE
+        L = gp[i - 1].astype(np.float32) - GE
         lp = [L] + lp
     return lp
 
 
-def pyramid_collapse(pyramid):
+def pyramid_collapse(pyramid: List[NDArray]) -> NDArray[np.uint8]:
     depth = len(pyramid)
-    collapsed = pyramid[depth-1].astype(np.float32)
-    for i in range(depth-2, -1, -1):
-        collapsed = image_expand(collapsed).astype(np.float32) + pyramid[i].astype(np.float32)
+    collapsed = pyramid[depth - 1].astype(np.float32)
+    for i in range(depth - 2, -1, -1):
+        collapsed = (
+            image_expand(collapsed).astype(np.float32) + pyramid[i].astype(np.float32)
+        )
     return np.clip(np.round(collapsed), 0, 255).astype(np.uint8)
 
 
-def exposure_fusion(images, depth=3, time_decay=None):
+def exposure_fusion(
+    images: List[NDArray[np.uint8]],
+    depth: int = 3,
+    time_decay: Optional[float] = None,
+) -> NDArray[np.uint8]:
 
     if not isinstance(images, list) or len(images) < 2:
         raise ValueError("Input has to be a list of at least two images")
@@ -105,26 +118,20 @@ def exposure_fusion(images, depth=3, time_decay=None):
         if img.shape != size:
             raise ValueError("Input images have to be of the same size")
 
-    # compute weights
     weights = compute_weights(images, time_decay)
 
-    # compute pyramids
     lps = []
     gps = []
-    for (image, weight) in zip(images, weights):
+    for image, weight in zip(images, weights):
         lps.append(laplacian_pyramid(image, depth))
         gps.append(gaussian_pyramid(weight, depth))
 
-    # combine pyramids with weights
     LS = []
     for l in range(depth):
         ls = np.zeros(lps[0][l].shape, dtype=np.float32)
         for k in range(len(images)):
-            lp = lps[k][l]
             gp_3ch = np.dstack((gps[k][l], gps[k][l], gps[k][l]))
-            ls += lp * gp_3ch
+            ls += lps[k][l] * gp_3ch
         LS.append(ls)
 
-    # collapse pyramid
-    fusion = pyramid_collapse(LS)
-    return fusion
+    return pyramid_collapse(LS)

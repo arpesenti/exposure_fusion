@@ -79,20 +79,20 @@ def gaussian_pyramid(img, depth):
 
 def laplacian_pyramid(img, depth):
     gp = gaussian_pyramid(img, depth+1)
-    lp = [gp[depth-1]]
+    lp = [gp[depth-1].astype(np.float32)]
     for i in range(depth-1, 0, -1):
-        GE = image_expand(gp[i])
-        L = cv2.subtract(gp[i-1], GE)
+        GE = image_expand(gp[i]).astype(np.float32)
+        L = gp[i-1].astype(np.float32) - GE
         lp = [L] + lp
     return lp
 
 
 def pyramid_collapse(pyramid):
     depth = len(pyramid)
-    collapsed = pyramid[depth-1]
+    collapsed = pyramid[depth-1].astype(np.float32)
     for i in range(depth-2, -1, -1):
-        collapsed = cv2.add(image_expand(collapsed), pyramid[i])
-    return collapsed
+        collapsed = image_expand(collapsed).astype(np.float32) + pyramid[i].astype(np.float32)
+    return np.clip(np.round(collapsed), 0, 255).astype(np.uint8)
 
 
 def exposure_fusion(images, depth=3, time_decay=None):

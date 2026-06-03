@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "exposure_fusion"
 version = "0.2"
 description = "Exposure fusion of multiple images"
-license = { text = "GPL" }
+license = { text = "MIT" }
 keywords = ["computer vision", "exposure fusion"]
 authors = [
   { name = "Armando Pesenti Gritti", email = "arpesenti@gmail.com" }
@@ -14,7 +14,7 @@ authors = [
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+  "License :: OSI Approved :: MIT License",
 ]
 requires-python = ">=3.8"
 dependencies = [

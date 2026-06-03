@@ -121,30 +121,35 @@ class TestComputeWeights:
 
 class TestExposureFusion:
     def test_not_a_list(self):
-        assert exposure_fusion("not a list") is None
+        with pytest.raises(ValueError):
+            exposure_fusion("not a list")
 
     def test_single_image(self):
-        assert exposure_fusion([_rgb_image(8, 8)]) is None
+        with pytest.raises(ValueError):
+            exposure_fusion([_rgb_image(8, 8)])
 
     def test_different_sizes(self):
         imgs = [_rgb_image(8, 8), _rgb_image(16, 16)]
-        assert exposure_fusion(imgs) is None
+        with pytest.raises(ValueError):
+            exposure_fusion(imgs)
+
+    def test_invalid_depth(self):
+        imgs = [_rgb_image(8, 8), _rgb_image(8, 8)]
+        with pytest.raises(ValueError):
+            exposure_fusion(imgs, depth=0)
 
     def test_basic_fusion(self):
         imgs = [_rgb_image(8, 8), _rgb_image(8, 8)]
         result = exposure_fusion(imgs, depth=2)
-        assert result is not None
         assert result.shape == (8, 8, 3)
         assert result.dtype == np.uint8
 
     def test_fusion_with_time_decay(self):
         imgs = [_rgb_image(16, 16) for _ in range(3)]
         result = exposure_fusion(imgs, depth=2, time_decay=3)
-        assert result is not None
         assert result.shape == (16, 16, 3)
 
     def test_fusion_depth_3(self):
         imgs = [_rgb_image(16, 16) for _ in range(2)]
         result = exposure_fusion(imgs, depth=3)
-        assert result is not None
         assert result.shape == (16, 16, 3)

@@ -95,14 +95,15 @@ def pyramid_collapse(pyramid):
 def exposure_fusion(images, depth=3, time_decay=None):
 
     if not isinstance(images, list) or len(images) < 2:
-        print("Input has to be a list of at least two images")
-        return None
+        raise ValueError("Input has to be a list of at least two images")
+
+    if depth < 1:
+        raise ValueError("depth must be >= 1")
 
     size = images[0].shape
-    for i in range(len(images)):
-        if not images[i].shape == size:
-            print("Input images have to be of the same size")
-            return None
+    for img in images:
+        if img.shape != size:
+            raise ValueError("Input images have to be of the same size")
 
     # compute weights
     weights = compute_weights(images, time_decay)

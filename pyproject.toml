@@ -26,5 +26,5 @@ readme = "README.md"
 [project.urls]
 Homepage = "https://github.com/arpesenti/exposure_fusion"
 
-[tool.setuptools]
-py-modules = ["exposure_fusion"]
+[tool.setuptools.packages.find]
+include = ["exposure_fusion*"]

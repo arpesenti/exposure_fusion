@@ -4,9 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "exposure_fusion"
-version = "0.2"
+version = "0.3"
 description = "Exposure fusion of multiple images"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 keywords = ["computer vision", "exposure fusion"]
 authors = [
   { name = "Armando Pesenti Gritti", email = "arpesenti@gmail.com" }

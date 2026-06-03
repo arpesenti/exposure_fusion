@@ -89,7 +89,9 @@ def sep_filter2d(image: NDArray, kernel_x: NDArray, kernel_y: NDArray) -> NDArra
     kernel_2d = np.outer(kernel_x, kernel_y)
     input_dtype = image.dtype
     result = _conv2d_raw(image, kernel_2d, _dtype=np.float32)
-    return np.clip(np.round(result), 0, 255).astype(input_dtype)
+    if np.issubdtype(input_dtype, np.integer):
+        return np.clip(np.round(result), 0, 255).astype(input_dtype)
+    return result.astype(input_dtype)
 
 
 def laplacian(image: NDArray) -> NDArray[np.float32]:
@@ -132,17 +134,22 @@ def _resize_half(image: NDArray) -> NDArray:
             + out[0:h:2, 1:w:2]
             + out[1:h:2, 1:w:2]
         ) / 4.0
-    return np.round(out).astype(image.dtype)
+    if np.issubdtype(image.dtype, np.integer):
+        return np.round(out).astype(image.dtype)
+    return out.astype(image.dtype)
 
 
 def _resize_double(image: NDArray) -> NDArray:
     if image.ndim == 2:
-        return _resize_double_2d(image).astype(image.dtype)
+        result = _resize_double_2d(image)
     else:
         channels = [
             _resize_double_2d(image[:, :, c]) for c in range(image.shape[2])
         ]
-        return np.stack(channels, axis=2).astype(image.dtype)
+        result = np.stack(channels, axis=2)
+    if np.issubdtype(image.dtype, np.integer):
+        return np.round(result).astype(image.dtype)
+    return result.astype(image.dtype)
 
 
 def _resize_double_2d(image: NDArray) -> NDArray:
@@ -165,7 +172,7 @@ def _resize_double_2d(image: NDArray) -> NDArray:
     )
     out[:, -1] = rows_upsampled[:, -1]
 
-    return np.round(out)
+    return out
 
 
 def warp_affine(
@@ -224,7 +231,9 @@ def warp_affine(
         )
         out[~valid] = 0
 
-    return np.round(out).astype(image.dtype)
+    if np.issubdtype(image.dtype, np.integer):
+        return np.round(out).astype(image.dtype)
+    return out.astype(image.dtype)
 
 
 _SCHARR_X = np.array([[-3, 0, 3], [-10, 0, 10], [-3, 0, 3]], dtype=np.float64)

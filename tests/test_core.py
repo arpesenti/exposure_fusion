@@ -41,6 +41,12 @@ class TestImageReduce:
         out = image_reduce(img)
         assert out.dtype == np.uint8
 
+    def test_single_channel(self):
+        img = np.random.randint(0, 256, (16, 16), dtype=np.uint8)
+        out = image_reduce(img)
+        assert out.shape == (8, 8)
+        assert out.dtype == np.uint8
+
 
 class TestImageExpand:
     def test_shape_doubled(self):
@@ -51,6 +57,12 @@ class TestImageExpand:
     def test_output_uint8(self):
         img = _rgb_image(8, 8)
         out = image_expand(img)
+        assert out.dtype == np.uint8
+
+    def test_single_channel(self):
+        img = np.random.randint(0, 256, (8, 8), dtype=np.uint8)
+        out = image_expand(img)
+        assert out.shape == (16, 16)
         assert out.dtype == np.uint8
 
 
@@ -85,6 +97,14 @@ class TestLaplacianPyramid:
             assert np.allclose(reconstructed.astype(np.float32),
                                img.astype(np.float32), atol=2)
 
+    def test_rectangular(self):
+        img = _rgb_image(16, 32)
+        for depth in [2, 3]:
+            lp = laplacian_pyramid(img, depth)
+            reconstructed = pyramid_collapse(lp)
+            assert reconstructed.shape == img.shape
+            assert reconstructed.dtype == np.uint8
+
 
 class TestPyramidCollapse:
     def test_output_shape(self):
@@ -117,6 +137,18 @@ class TestComputeWeights:
         weights = compute_weights(images, time_decay=None)
         total = weights[0] + weights[1]
         assert np.allclose(total[total > 0], 1.0, atol=1e-5)
+
+    def test_rectangular(self):
+        images = [_rgb_image(8, 16), _rgb_image(8, 16)]
+        weights = compute_weights(images, time_decay=None)
+        assert len(weights) == 2
+        assert weights[0].shape == (8, 16)
+        assert weights[0].dtype == np.float32
+
+    def test_time_decay_last_heaviest(self):
+        mid = np.full((8, 8, 3), 128, dtype=np.uint8)
+        weights = compute_weights([mid, mid.copy()], time_decay=1)
+        assert np.all(weights[1] > weights[0])
 
 
 class TestExposureFusion:
@@ -151,5 +183,23 @@ class TestExposureFusion:
 
     def test_fusion_depth_3(self):
         imgs = [_rgb_image(16, 16) for _ in range(2)]
+        result = exposure_fusion(imgs, depth=3)
+        assert result.shape == (16, 16, 3)
+
+    def test_rectangular(self):
+        imgs = [_rgb_image(12, 24), _rgb_image(12, 24)]
+        result = exposure_fusion(imgs, depth=2)
+        assert result.shape == (12, 24, 3)
+        assert result.dtype == np.uint8
+
+    def test_five_images(self):
+        imgs = [_rgb_image(8, 8) for _ in range(5)]
+        result = exposure_fusion(imgs, depth=2)
+        assert result.shape == (8, 8, 3)
+        assert result.dtype == np.uint8
+
+    def test_identical_images(self):
+        img = _rgb_image(16, 16)
+        imgs = [img, img.copy()]
         result = exposure_fusion(imgs, depth=3)
         assert result.shape == (16, 16, 3)

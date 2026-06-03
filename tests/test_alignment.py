@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 import pytest
 from exposure_fusion.alignment import align_images
@@ -28,5 +29,20 @@ class TestAlignImages:
         assert len(result) == 2
         assert result[0].shape == (16, 16, 3)
         assert result[1].shape == (16, 16, 3)
+        assert result[0].dtype == np.uint8
+        assert result[1].dtype == np.uint8
+
+    def test_translation_shift(self):
+        h, w = 24, 32
+        img = np.zeros((h, w, 3), dtype=np.uint8)
+        img[4:12, 4:12] = 200
+        img[8:16, 8:16] = 100
+
+        M = np.float32([[1, 0, 3], [0, 1, 2]])
+        shifted = cv2.warpAffine(img, M, (w, h))
+
+        result = align_images([img, shifted])
+        assert len(result) == 2
+        assert result[1].shape == (h, w, 3)
         assert result[0].dtype == np.uint8
         assert result[1].dtype == np.uint8

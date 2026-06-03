@@ -47,10 +47,12 @@ def _reflect_pad_2d(image: NDArray, pad_h: int, pad_w: int) -> NDArray:
     return image
 
 
-def _conv2d_raw(image: NDArray, kernel: NDArray) -> NDArray:
+def _conv2d_raw(image: NDArray, kernel: NDArray, _dtype=None) -> NDArray:
+    if _dtype is None:
+        _dtype = np.float64
     kh, kw = kernel.shape
     pad_h, pad_w = kh // 2, kw // 2
-    padded = _reflect_pad(image, pad_h, pad_w).astype(np.float64)
+    padded = _reflect_pad(image, pad_h, pad_w).astype(_dtype)
 
     if image.ndim == 2:
         h, w = image.shape[:2]
@@ -82,11 +84,11 @@ def _conv2d_raw(image: NDArray, kernel: NDArray) -> NDArray:
 
 
 def sep_filter2d(image: NDArray, kernel_x: NDArray, kernel_y: NDArray) -> NDArray:
-    kernel_x = np.asarray(kernel_x, dtype=np.float64).ravel()
-    kernel_y = np.asarray(kernel_y, dtype=np.float64).ravel()
+    kernel_x = np.asarray(kernel_x, dtype=np.float32).ravel()
+    kernel_y = np.asarray(kernel_y, dtype=np.float32).ravel()
     kernel_2d = np.outer(kernel_x, kernel_y)
     input_dtype = image.dtype
-    result = _conv2d_raw(image, kernel_2d)
+    result = _conv2d_raw(image, kernel_2d, _dtype=np.float32)
     return np.clip(np.round(result), 0, 255).astype(input_dtype)
 
 
@@ -233,8 +235,8 @@ def _compute_gradient(image: NDArray, gauss_filt_size: int):
     if gauss_filt_size > 0:
         sigma = 0.3 * (gauss_filt_size - 1) + 0.8
         k = get_gaussian_kernel(gauss_filt_size, sigma).ravel().astype(np.float64)
-        smoothed = sep_filter2d(image, k.reshape(-1, 1), k.reshape(-1, 1))
-        smoothed = smoothed.astype(np.float64)
+        kernel_2d = np.outer(k, k)
+        smoothed = _conv2d_raw(image, kernel_2d)
     else:
         smoothed = image.astype(np.float64)
 

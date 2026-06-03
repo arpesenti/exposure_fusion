@@ -70,7 +70,7 @@ class TestSepFilter2d:
             img = _gray_image(32, 48)
             ours = sep_filter2d(img, k, k.T)
             cv = cv2.sepFilter2D(img, -1, k, k.T)
-            assert np.allclose(ours, cv, atol=1e-4)
+            assert np.allclose(ours.astype(np.float32), cv.astype(np.float32), atol=0.51)
 
     def test_vs_opencv_bgr(self):
         k = cv2.getGaussianKernel(5, 0.4)

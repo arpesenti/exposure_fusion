@@ -3,6 +3,15 @@ import sys
 
 import numpy as np
 
+try:
+    from PIL import Image
+except ImportError:
+    print("error: Pillow is required. Install with: pip install exposure_fusion",
+          file=sys.stderr)
+    sys.exit(1)
+
+from exposure_fusion import align_images, exposure_fusion as _exposure_fusion
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -29,13 +38,6 @@ def main() -> None:
     if args.depth < 1:
         parser.error("Depth must be at least 1")
 
-    try:
-        from PIL import Image
-    except ImportError:
-        print("error: Pillow is required. Install with: pip install exposure_fusion",
-              file=sys.stderr)
-        sys.exit(1)
-
     if args.verbose:
         print(f"Reading {len(args.images)} images...", file=sys.stderr)
 
@@ -49,14 +51,12 @@ def main() -> None:
     if args.align:
         if args.verbose:
             print("Aligning images...", file=sys.stderr)
-        from exposure_fusion import align_images
         images = align_images(images)
 
     if args.verbose:
         print("Fusing images...", file=sys.stderr)
 
-    from exposure_fusion import exposure_fusion
-    result = exposure_fusion(images, depth=args.depth, time_decay=args.time_decay)
+    result = _exposure_fusion(images, depth=args.depth, time_decay=args.time_decay)
 
     if args.verbose:
         print(f"Writing {args.output}...", file=sys.stderr)

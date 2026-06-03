@@ -15,6 +15,7 @@ from exposure_fusion._numpy_ops import (
 def compute_weights(
     images: List[NDArray[np.uint8]],
     time_decay: Optional[float],
+    well_exposedness_sigma: float = 0.04,
 ) -> List[NDArray[np.float32]]:
     w_c, w_s, w_e = 1, 1, 1
 
@@ -38,10 +39,9 @@ def compute_weights(
         W_saturation = image.std(axis=2, dtype=np.float32) ** w_s + 1
         W *= W_saturation
 
-        ws = 0.04
         W_exposedness = (
             np.prod(
-                np.exp(-((image - 0.5) ** 2) / (2 * ws)),
+                np.exp(-((image - 0.5) ** 2) / (2 * well_exposedness_sigma)),
                 axis=2,
                 dtype=np.float32,
             )
@@ -112,6 +112,7 @@ def exposure_fusion(
     images: List[NDArray[np.uint8]],
     depth: int = 3,
     time_decay: Optional[float] = None,
+    well_exposedness_sigma: float = 0.04,
 ) -> NDArray[np.uint8]:
 
     if not isinstance(images, list) or len(images) < 2:
@@ -125,7 +126,7 @@ def exposure_fusion(
         if img.shape != size:
             raise ValueError("Input images have to be of the same size")
 
-    weights = compute_weights(images, time_decay)
+    weights = compute_weights(images, time_decay, well_exposedness_sigma)
 
     lps = []
     gps = []

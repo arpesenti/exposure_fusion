@@ -60,9 +60,9 @@ Arguments:
 Examples:
 
 ```bash
-exposure-fusion img_mean.jpg img_under.jpg img_over.jpg -o result.jpg
-exposure-fusion --align -d 4 img1.jpg img2.jpg img3.jpg -o result.jpg
-exposure-fusion --time-decay 4 frame1.png frame2.png frame3.png frame4.png -o fusion.png
+exposure-fusion samples/peyrou_mean.jpg samples/peyrou_under.jpg samples/peyrou_over.jpg -o result.jpg
+exposure-fusion --align -d 4 samples/peyrou_mean.jpg samples/peyrou_under.jpg samples/peyrou_over.jpg -o result.jpg
+exposure-fusion --time-decay 4 samples/time_decay_1.png samples/time_decay_2.png samples/time_decay_3.png samples/time_decay_4.png -o fusion.png
 ```
 
 Also invocable as `python -m exposure_fusion`.
@@ -92,9 +92,12 @@ images = align_images([img1, img2, img3])
 fusion = exposure_fusion(images, depth=4)
 
 _write('samples/peyrou_fusion.jpg', fusion)
-```
 
-See `example.py` for a complete end-to-end example including time-decay fusion.
+# Time-decay fusion (e.g. time-lapse)
+images = [_read(f'samples/time_decay_{i}.png') for i in range(1, 5)]
+fusion = exposure_fusion(images, depth=3, time_decay=4)
+_write('samples/time_decay_fusion.png', fusion)
+```
 
 ## Tests
 

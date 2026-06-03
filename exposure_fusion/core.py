@@ -1,10 +1,3 @@
-import sys
-PY3 = sys.version_info > (3,)
-if PY3:
-    from builtins import isinstance
-else:
-    from __builtin__ import isinstance
-
 import cv2
 import numpy as np
 

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "exposure_fusion"
+version = "0.2"
+description = "Exposure fusion of multiple images"
+license = { text = "GPL" }
+keywords = ["computer vision", "exposure fusion"]
+authors = [
+  { name = "Armando Pesenti Gritti", email = "arpesenti@gmail.com" }
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+]
+requires-python = ">=3.8"
+dependencies = [
+  "numpy",
+  "opencv-python>=3",
+]
+readme = "README.md"
+
+[project.urls]
+Homepage = "https://github.com/arpesenti/exposure_fusion"
+
+[tool.setuptools]
+py-modules = ["exposure_fusion"]

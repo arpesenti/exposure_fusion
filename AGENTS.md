@@ -9,7 +9,7 @@ pytest tests/
 
 ## Key facts
 
-- **Images are BGR uint8 ndarrays internally.** Pillow I/O flips with `[:, :, ::-1]` on both read and write. The public API (`exposure_fusion`, `align_images`) expects BGR.
+- **Images are RGB uint8 ndarrays internally.** Pillow reads/writes directly with no channel flip. The public API (`exposure_fusion`, `align_images`) expects RGB.
 - **CLI**: `exposure-fusion` or `python -m exposure_fusion`.
 - **Entrypoints**: `exposure_fusion/__init__.py` (public API: `exposure_fusion`, `align_images`), `exposure_fusion/cli.py` (argparse CLI via console_scripts), `exposure_fusion/__main__.py`.
 - **Runtime deps**: only `numpy` + `Pillow`. No OpenCV needed at runtime.

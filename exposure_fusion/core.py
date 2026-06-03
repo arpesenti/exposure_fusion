@@ -4,7 +4,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from exposure_fusion._numpy_ops import (
-    bgr_to_gray,
+    rgb_to_gray,
     get_gaussian_kernel,
     laplacian,
     resize,
@@ -31,7 +31,7 @@ def compute_weights(
         image = np.float32(image_uint) / 255
         W = np.ones(image.shape[:2], dtype=np.float32)
 
-        image_gray = bgr_to_gray(image)
+        image_gray = rgb_to_gray(image)
         w_laplacian = laplacian(image_gray)
         W_contrast = np.absolute(w_laplacian) ** w_c + 1
         W *= W_contrast

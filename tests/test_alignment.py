@@ -2,10 +2,10 @@ import cv2
 import numpy as np
 import pytest
 from exposure_fusion.alignment import align_images
-from exposure_fusion._numpy_ops import bgr_to_gray, find_transform_ecc, MOTION_TRANSLATION, TERM_CRITERIA_EPS, TERM_CRITERIA_COUNT
+from exposure_fusion._numpy_ops import rgb_to_gray, find_transform_ecc, MOTION_TRANSLATION, TERM_CRITERIA_EPS, TERM_CRITERIA_COUNT
 
 
-def _bgr_image(height=16, width=16):
+def _rgb_image(height=16, width=16):
     return np.random.randint(0, 256, (height, width, 3), dtype=np.uint8)
 
 
@@ -16,15 +16,15 @@ class TestAlignImages:
 
     def test_single_image(self):
         with pytest.raises(ValueError):
-            align_images([_bgr_image(8, 8)])
+            align_images([_rgb_image(8, 8)])
 
     def test_different_sizes(self):
-        imgs = [_bgr_image(8, 8), _bgr_image(16, 16)]
+        imgs = [_rgb_image(8, 8), _rgb_image(16, 16)]
         with pytest.raises(ValueError):
             align_images(imgs)
 
     def test_basic_alignment(self):
-        img = _bgr_image(16, 16)
+        img = _rgb_image(16, 16)
         imgs = [img.copy(), img.copy()]
         result = align_images(imgs)
         assert len(result) == 2
@@ -51,8 +51,8 @@ class TestAlignImages:
 
         warp_matrix = np.eye(2, 3, dtype=np.float32)
         criteria = (TERM_CRITERIA_EPS | TERM_CRITERIA_COUNT, 5000, 1e-10)
-        gray_img = bgr_to_gray(img)
-        gray_shifted = bgr_to_gray(shifted)
+        gray_img = rgb_to_gray(img)
+        gray_shifted = rgb_to_gray(shifted)
         _, M_est = find_transform_ecc(gray_img, gray_shifted, warp_matrix.copy(),
                                       MOTION_TRANSLATION, criteria)
         assert abs(M_est[0, 2] - tx) < 0.5

@@ -11,8 +11,8 @@ TERM_CRITERIA_EPS = 2
 TERM_CRITERIA_COUNT = 1
 
 
-def bgr_to_gray(image: NDArray) -> NDArray[np.float32]:
-    weights = np.array([0.114, 0.587, 0.299], dtype=np.float32)
+def rgb_to_gray(image: NDArray) -> NDArray:
+    weights = np.array([0.299, 0.587, 0.114], dtype=np.float32)
     result = np.dot(image.astype(np.float32), weights)
     if image.dtype == np.uint8:
         return np.round(result).astype(np.uint8)

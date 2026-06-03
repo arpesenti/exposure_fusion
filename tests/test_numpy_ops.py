@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from exposure_fusion._numpy_ops import (
-    bgr_to_gray,
+    rgb_to_gray,
     find_transform_ecc,
     get_gaussian_kernel,
     laplacian,
@@ -20,22 +20,22 @@ def _gray_image(h=16, w=16):
     return np.random.randint(0, 256, (h, w), dtype=np.uint8)
 
 
-def _bgr_image(h=16, w=16):
+def _rgb_image(h=16, w=16):
     return np.random.randint(0, 256, (h, w, 3), dtype=np.uint8)
 
 
-class TestBgrToGray:
+class TestRgbToGray:
     def test_vs_opencv_uint8(self):
         for _ in range(5):
-            img = _bgr_image(32, 48)
-            ours = bgr_to_gray(img)
-            cv = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img = _rgb_image(32, 48)
+            ours = rgb_to_gray(img)
+            cv = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
             assert np.allclose(ours.astype(np.float32), cv.astype(np.float32), atol=1)
 
     def test_vs_opencv_float32(self):
         img = np.random.rand(16, 16, 3).astype(np.float32)
-        ours = bgr_to_gray(img)
-        cv = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        ours = rgb_to_gray(img)
+        cv = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         assert np.allclose(ours, cv, atol=1e-6)
 
 
@@ -72,9 +72,9 @@ class TestSepFilter2d:
             cv = cv2.sepFilter2D(img, -1, k, k.T)
             assert np.allclose(ours.astype(np.float32), cv.astype(np.float32), atol=0.51)
 
-    def test_vs_opencv_bgr(self):
+    def test_vs_opencv_rgb(self):
         k = cv2.getGaussianKernel(5, 0.4)
-        img = _bgr_image(32, 48)
+        img = _rgb_image(32, 48)
         ours = sep_filter2d(img, k, k.T)
         cv = cv2.sepFilter2D(img, -1, k, k.T)
         assert np.allclose(ours, cv, atol=1)
@@ -102,11 +102,11 @@ class TestResize:
             cv = cv2.resize(img, None, fx=0.5, fy=0.5)
             assert np.allclose(ours, cv, atol=1)
 
-    def test_downsample_vs_opencv_bgr(self):
+    def test_downsample_vs_opencv_rgb(self):
         for _ in range(5):
             h = np.random.randint(8, 32) * 2
             w = np.random.randint(8, 32) * 2
-            img = _bgr_image(h, w)
+            img = _rgb_image(h, w)
             ours = resize(img, fx=0.5, fy=0.5)
             cv = cv2.resize(img, None, fx=0.5, fy=0.5)
             assert np.allclose(ours, cv, atol=1)
@@ -120,11 +120,11 @@ class TestResize:
             cv = cv2.resize(img, None, fx=2, fy=2)
             assert np.allclose(ours, cv, atol=1)
 
-    def test_upsample_vs_opencv_bgr(self):
+    def test_upsample_vs_opencv_rgb(self):
         for _ in range(5):
             h = np.random.randint(4, 16)
             w = np.random.randint(4, 16)
-            img = _bgr_image(h, w)
+            img = _rgb_image(h, w)
             ours = resize(img, fx=2, fy=2)
             cv = cv2.resize(img, None, fx=2, fy=2)
             assert np.allclose(ours, cv, atol=1)
@@ -133,7 +133,7 @@ class TestResize:
 class TestWarpAffine:
     def test_vs_opencv_identity(self):
         for _ in range(5):
-            img = _bgr_image(32, 48)
+            img = _rgb_image(32, 48)
             M = np.float32([[1, 0, 0], [0, 1, 0]])
             ours = warp_affine(img, M, (48, 32))
             cv = cv2.warpAffine(
@@ -145,7 +145,7 @@ class TestWarpAffine:
         for _ in range(5):
             tx = np.random.randint(-5, 5)
             ty = np.random.randint(-5, 5)
-            img = _bgr_image(24, 32)
+            img = _rgb_image(24, 32)
             M = np.float32([[1, 0, tx], [0, 1, ty]])
             ours = warp_affine(img, M, (32, 24))
             cv = cv2.warpAffine(
@@ -169,7 +169,7 @@ class TestWarpAffine:
         for _ in range(5):
             tx = np.random.randint(-5, 5)
             ty = np.random.randint(-5, 5)
-            img = _bgr_image(24, 32)
+            img = _rgb_image(24, 32)
             M = np.float32([[1, 0, tx], [0, 1, ty]])
             ours = warp_affine(img, M, (32, 24))
             cv = cv2.warpAffine(

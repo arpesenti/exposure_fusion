@@ -69,21 +69,15 @@ Also invocable as `python -m exposure_fusion`.
 
 ## Python API
 
+Pass file paths directly to `exposure_fusion` and `align_images` — no manual I/O needed:
+
 ```python
-from exposure_fusion import exposure_fusion, align_images
-import numpy as np
-from PIL import Image
-
-def _read(path):
-    return np.array(Image.open(path))[:, :, ::-1]  # RGB -> BGR
-
-def _write(path, img):
-    Image.fromarray(img[:, :, ::-1]).save(path)    # BGR -> RGB
+from exposure_fusion import exposure_fusion, align_images, load_image, save_image
 
 # Load bracket exposures
-img1 = _read('samples/peyrou_mean.jpg')
-img2 = _read('samples/peyrou_under.jpg')
-img3 = _read('samples/peyrou_over.jpg')
+img1 = load_image('samples/peyrou_mean.jpg')
+img2 = load_image('samples/peyrou_under.jpg')
+img3 = load_image('samples/peyrou_over.jpg')
 
 # Optional alignment
 images = align_images([img1, img2, img3])
@@ -91,12 +85,20 @@ images = align_images([img1, img2, img3])
 # Fuse
 fusion = exposure_fusion(images, depth=4)
 
-_write('samples/peyrou_fusion.jpg', fusion)
+save_image('samples/peyrou_fusion.jpg', fusion)
+
+# Or pass paths directly — no load_image needed:
+fusion = exposure_fusion([
+    'samples/peyrou_mean.jpg',
+    'samples/peyrou_under.jpg',
+    'samples/peyrou_over.jpg',
+], depth=4)
+save_image('samples/peyrou_fusion.jpg', fusion)
 
 # Time-decay fusion (e.g. time-lapse)
-images = [_read(f'samples/time_decay_{i}.png') for i in range(1, 5)]
+images = [load_image(f'samples/time_decay_{i}.png') for i in range(1, 5)]
 fusion = exposure_fusion(images, depth=3, time_decay=4)
-_write('samples/time_decay_fusion.png', fusion)
+save_image('samples/time_decay_fusion.png', fusion)
 ```
 
 ## Tests

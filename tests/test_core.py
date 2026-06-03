@@ -1,5 +1,8 @@
 import numpy as np
 import pytest
+from PIL import Image
+
+from exposure_fusion import exposure_fusion as _exposure_fusion_api, align_images as _align_images_api
 from exposure_fusion.core import (
     compute_weights,
     gaussian_kernel,
@@ -10,6 +13,7 @@ from exposure_fusion.core import (
     pyramid_collapse,
     exposure_fusion,
 )
+from exposure_fusion.io import load_image, save_image
 
 
 def _rgb_image(height=16, width=16):
@@ -203,3 +207,72 @@ class TestExposureFusion:
         imgs = [img, img.copy()]
         result = exposure_fusion(imgs, depth=3)
         assert result.shape == (16, 16, 3)
+
+
+class TestLoadImage:
+    def test_rgb(self, tmp_path):
+        img = _rgb_image(8, 8)
+        path = tmp_path / "test.png"
+        Image.fromarray(img).save(path)
+        loaded = load_image(str(path))
+        assert loaded.shape == (8, 8, 3)
+        assert loaded.dtype == np.uint8
+
+    def test_grayscale(self, tmp_path):
+        img = np.random.randint(0, 256, (8, 8), dtype=np.uint8)
+        path = tmp_path / "test.png"
+        Image.fromarray(img).save(path)
+        loaded = load_image(str(path))
+        assert loaded.shape == (8, 8)
+        assert loaded.dtype == np.uint8
+        assert np.array_equal(loaded, img)
+
+    def test_roundtrip(self, tmp_path):
+        img = _rgb_image(16, 16)
+        path = tmp_path / "test.png"
+        save_image(str(path), img)
+        loaded = load_image(str(path))
+        assert np.array_equal(loaded, img)
+
+
+class TestSaveImage:
+    def test_rgb(self, tmp_path):
+        img = _rgb_image(8, 8)
+        path = tmp_path / "test.png"
+        save_image(str(path), img)
+        reloaded = np.array(Image.open(path))
+        assert np.array_equal(reloaded, img)
+
+    def test_grayscale(self, tmp_path):
+        img = np.random.randint(0, 256, (8, 16), dtype=np.uint8)
+        path = tmp_path / "test.png"
+        save_image(str(path), img)
+        reloaded = np.array(Image.open(path))
+        assert np.array_equal(reloaded, img)
+
+
+class TestExposureFusionPaths:
+    def test_with_file_paths(self, tmp_path):
+        img = _rgb_image(16, 16)
+        p1 = tmp_path / "a.png"
+        p2 = tmp_path / "b.png"
+        Image.fromarray(img).save(p1)
+        Image.fromarray(img).save(p2)
+        result = _exposure_fusion_api([str(p1), str(p2)], depth=2)
+        assert result.shape == (16, 16, 3)
+        assert result.dtype == np.uint8
+
+
+class TestAlignImagesPaths:
+    def test_with_file_paths(self, tmp_path):
+        img = _rgb_image(16, 16)
+        p1 = tmp_path / "a.png"
+        p2 = tmp_path / "b.png"
+        Image.fromarray(img).save(p1)
+        Image.fromarray(img).save(p2)
+        result = _align_images_api([str(p1), str(p2)])
+        assert len(result) == 2
+        assert result[0].shape == (16, 16, 3)
+        assert result[0].dtype == np.uint8
+        assert result[1].shape == (16, 16, 3)
+        assert result[1].dtype == np.uint8

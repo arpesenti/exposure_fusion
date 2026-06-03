@@ -56,7 +56,7 @@ def gaussian_kernel(size=5, sigma=0.4):
 
 def image_reduce(image):
     kernel = gaussian_kernel()
-    out_image = cv2.filter2D(image, cv2.CV_8UC3, kernel)
+    out_image = cv2.sepFilter2D(image, -1, kernel, kernel.T)
     out_image = cv2.resize(out_image, None, fx=0.5, fy=0.5)
     return out_image
 
@@ -64,7 +64,7 @@ def image_reduce(image):
 def image_expand(image):
     kernel = gaussian_kernel()
     out_image = cv2.resize(image, None, fx=2, fy=2)
-    out_image = cv2.filter2D(out_image, cv2.CV_8UC3, kernel)
+    out_image = cv2.sepFilter2D(out_image, -1, kernel, kernel.T)
     return out_image
 
 
